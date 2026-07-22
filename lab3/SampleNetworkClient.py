@@ -40,17 +40,33 @@ class SimpleNetworkClient :
     def getTemperatureFromPort(self, p, tok) :
         payload = bytes((tok + ";GET_TEMP"), 'utf-8')
         s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        s.sendto(payload, ("127.0.0.1", p))
-        #s.sendto(b"%s;GET_TEMP" % tok, ("127.0.0.1", p))
-        msg, addr = s.recvfrom(1024)
-        m = msg.decode("utf-8")
-        return (float(m))
+        s.settimeout(5.0)
+
+        try:
+            s.sendto(payload, ("127.0.0.1", p))
+            #s.sendto(b"%s;GET_TEMP" % tok, ("127.0.0.1", p))
+            msg, addr = s.recvfrom(1024)
+            m = msg.decode("utf-8")
+            return (float(m))
+        except socket.timeout:
+            print("Timeout waiting for temperature response")
+            return None
+        finally:
+            s.close()
 
     def authenticate(self, p, pw) :
         s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        s.sendto(b"AUTH %s;" % pw, ("127.0.0.1", p))
-        msg, addr = s.recvfrom(1024)
-        return msg.strip()
+        s.settimeout(5.0)
+
+        try:
+            s.sendto(b"AUTH %s;" % pw, ("127.0.0.1", p))
+            msg, addr = s.recvfrom(1024)
+            return msg.strip()
+        except socket.timeout:
+            print("Authentication request timed out.")
+            return None
+        finally:
+            s.close()
 
     def setTemperatureC(self, p, tok):
         payload = bytes((tok + ";SET_DEGC"), 'utf-8')
@@ -84,8 +100,14 @@ class SimpleNetworkClient :
         self.updateTime()
         if self.infToken is None : #not yet authenticated
             self.infToken = self.authenticate(self.infPort, b"!Q#E%T&U8i6y4r2w")
-        self.infTemps.append(self.getTemperatureFromPort(p, tok)-273)
-        #self.infTemps.append(self.infTemps[-1] + 1)
+
+        temp = self.getTemperatureFromPort(p, tok)
+        if temp is not None:
+            self.infTemps.append(temp-273)
+            #self.infTemps.append(self.infTemps[-1] + 1)
+        else:
+            return self.infLn,
+        
         self.infTemps = self.infTemps[-30:]
         self.infLn.set_data(range(30), self.infTemps)
         return self.infLn,
@@ -95,8 +117,12 @@ class SimpleNetworkClient :
         if self.incToken is None : #not yet authenticated
             self.incToken = self.authenticate(self.incPort, b"!Q#E%T&U8i6y4r2w")
 
-        self.incTemps.append(self.getTemperatureFromPort(p, tok)-273)
-        #self.incTemps.append(self.incTemps[-1] + 1)
+        temp = self.getTemperatureFromPort(p, tok)
+        if temp is not None:
+            self.incTemps.append(temp-273)
+            #self.incTemps.append(self.incTemps[-1] + 1)
+        else:
+            return self.incLn,
         self.incTemps = self.incTemps[-30:]
         self.incLn.set_data(range(30), self.incTemps)
         return self.incLn,
