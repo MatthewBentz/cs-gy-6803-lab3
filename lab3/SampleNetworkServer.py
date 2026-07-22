@@ -70,6 +70,7 @@ class SmartNetworkThermometer (threading.Thread) :
                 elif cs[0] == "LOGOUT":
                     if cs[1] in self.tokens :
                         self.tokens.remove(cs[1])
+                        return #ends processing of commands after a session is invalidated
                 else : #unknown command
                     self.serverSocket.sendto(b"Invalid Command\n", addr)
             elif c == "SET_DEGF" :
