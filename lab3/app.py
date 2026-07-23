@@ -56,8 +56,10 @@ def login():
         else:
             try:
                 db_message = ''
-                db_query = "SELECT * FROM users WHERE password = '" + password + "'" 
-                db_password = conn.execute(db_query).fetchone()
+                db_query = "SELECT * FROM users WHERE password = ?"
+                db_password = conn.execute(db_query, (password,)).fetchone()
+                if db_password is None:
+                    return render_template('login.html', Err="Wrong password")
                 for x in db_password:
                     db_message = db_message + ":" + str(x)
                 return render_template('login.html', Err=str(db_message))
