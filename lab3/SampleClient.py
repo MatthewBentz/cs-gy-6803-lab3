@@ -72,8 +72,8 @@ sim = infinc.Simulator(infant = bob, incubator = inc, roomTemp = 20 + 273, timeS
 
 sim.start()
 
-sc = SimpleClient(bobThermo, incThermo)
+# sc = SimpleClient(bobThermo, incThermo)
 
-plt.grid()
-plt.show()
+# plt.grid()
+# plt.show()
 
